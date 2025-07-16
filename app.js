@@ -83,9 +83,29 @@ client.once(Events.ClientReady, async () => {
   }
 });
 
-// This event listener will run every time an interaction is created (e.g., a slash command is used).
 client.on(Events.InteractionCreate, async interaction => {
-  // Ignore any interactions that are not chat input commands (i.e., slash commands).
+  if (interaction.isButton()) {
+    if (!session.isActive) {
+      return interaction.reply({ content: 'No stand-up in progress.', ephemeral: true });
+    }
+    if (interaction.customId === 'next_speaker') {
+      const nextCommand = client.commands.get('next');
+      await nextCommand.execute(interaction, session);
+      await interaction.deferUpdate();
+      return;
+    }
+    if (interaction.customId === 'end_standup') {
+      session.isActive = false;
+      session.currentSpeaker = null;
+      session.queue = [];
+      session.spoken = [];
+      session.timer = null;
+      await interaction.update({ content: 'Stand-up ended.', embeds: [], components: [] });
+      return;
+    }
+  }
+
+  // This event listener will run every time an interaction is created (e.g., a slash command is used).
   if (!interaction.isChatInputCommand()) return;
 
   // Get the command object from the client.commands Collection based on the interaction's command name.

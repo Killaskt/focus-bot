@@ -58,7 +58,8 @@ module.exports = {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        await interaction.reply({ embeds: [embed], components: [row] });
+        const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+        session.standupMessage = reply;
 
         // Start the first person's turn
         const nextCommand = interaction.client.commands.get('next');
