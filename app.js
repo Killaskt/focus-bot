@@ -66,16 +66,18 @@ client.once(Events.ClientReady, async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN);
+  const commands = client.commands.map(cmd => cmd.data.toJSON());
 
   try {
-    console.log('Started refreshing application (/) commands.');
-
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-      { body: client.commands.map(cmd => cmd.data.toJSON()) },
-    );
-
-    console.log('Successfully reloaded application (/) commands.');
+    // Register commands for every guild the bot is in
+    for (const [guildId] of client.guilds.cache) {
+      console.log(`Registering commands for guild: ${guildId}`);
+      await rest.put(
+        Routes.applicationGuildCommands(client.user.id, guildId),
+        { body: commands },
+      );
+    }
+    console.log('Successfully reloaded application (/) commands for all guilds.');
   } catch (error) {
     console.error(error);
   }
