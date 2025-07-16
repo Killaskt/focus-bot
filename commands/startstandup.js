@@ -1,6 +1,5 @@
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { ChannelType } = require('discord.js');
+const { ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -42,7 +41,25 @@ module.exports = {
         session.voiceChannel = voiceChannel;
         session.textChannel = interaction.channel;
 
-        await interaction.reply(`Stand-up started in ${voiceChannel.name}! The speaking order is: ${session.queue.map(u => u.username).join(', ')}`);
+        // Build the rich embed message
+        const embed = new EmbedBuilder()
+            .setTitle('Current Standup')
+            .setDescription(session.queue.map((u, i) => `${i === 0 ? '➡️ ' : ''}${u.username}`).join('\n'))
+            .setColor(0x00AE86);
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('next_speaker')
+                .setLabel('Next')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('end_standup')
+                .setLabel('End Standup')
+                .setStyle(ButtonStyle.Danger)
+        );
+
+        await interaction.reply({ embeds: [embed], components: [row] });
+
         // Start the first person's turn
         const nextCommand = interaction.client.commands.get('next');
         await nextCommand.execute(interaction, session, true);

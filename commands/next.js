@@ -1,5 +1,30 @@
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+
+function sendStandupEmbed(channel, session) {
+    const allUsers = [session.currentSpeaker, ...session.queue].filter(Boolean);
+    const embed = new EmbedBuilder()
+        .setTitle('Current Standup')
+        .setDescription(
+            allUsers.map((u, i) => {
+                if (!u) return '';
+                if (i === 0) return `➡️ **${u.username}**`;
+                return u.username;
+            }).join('\n')
+        )
+        .setColor(0x00AE86);
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('next_speaker')
+            .setLabel('Next')
+            .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+            .setCustomId('end_standup')
+            .setLabel('End Standup')
+            .setStyle(ButtonStyle.Danger)
+    );
+    channel.send({ embeds: [embed], components: [row] });
+}
 
 function startTurn(interaction, session) {
     if (session.timer) {
@@ -9,10 +34,10 @@ function startTurn(interaction, session) {
     session.currentSpeaker = session.queue.shift();
     session.spoken.push(session.currentSpeaker);
 
-    interaction.channel.send(`It\'s ${session.currentSpeaker.username}\'s turn to speak.`);
+    sendStandupEmbed(interaction.channel, session);
 
     session.timer = setTimeout(() => {
-        interaction.channel.send(`${session.currentSpeaker.username}\'s time is up!`);
+        interaction.channel.send(`${session.currentSpeaker.username}'s time is up!`);
         if (session.feedbackTime > 0) {
             startFeedback(interaction, session);
         } else {
