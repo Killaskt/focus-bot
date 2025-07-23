@@ -123,7 +123,15 @@ module.exports = {
         logSession(session, 'execute');
         if (!session.isActive) {
             console.log('No standup in progress at execute.');
-            return interaction.reply({ content: 'There is no stand-up in progress.', ephemeral: true });
+            if (interaction.isChatInputCommand()) {
+                return interaction.reply({ content: 'There is no stand-up in progress.', flags: 64 }); // ephemeral
+            } else if (interaction.isButton()) {
+                if (session.standupMessage) {
+                    await session.standupMessage.edit({ content: 'No stand-up in progress.', embeds: [], components: [] });
+                }
+                try { await interaction.update({}); } catch (e) {}
+                return;
+            }
         }
 
         if (!isFirstTurn && interaction.user.id !== session.currentSpeaker.id) {
@@ -136,8 +144,10 @@ module.exports = {
             endStandup(interaction, session);
         }
 
-        if (!isFirstTurn) {
-            await interaction.reply({ content: 'Moving to the next speaker.', ephemeral: true });
+        if (!isFirstTurn && interaction.isChatInputCommand()) {
+            await interaction.reply({ content: 'Moving to the next speaker.', flags: 64 }); // ephemeral
+        } else if (interaction.isButton()) {
+            try { await interaction.update({}); } catch (e) {}
         }
     },
 };
