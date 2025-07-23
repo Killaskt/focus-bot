@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -22,6 +21,10 @@ module.exports = {
         }
 
         session.queue.splice(index, 1);
+        if (session.standupMessage) {
+            const nextCommand = interaction.client.commands.get('next');
+            nextCommand.sendStandupEmbed(interaction, session);
+        }
         await interaction.reply({ content: `${userToRemove.username} has been removed from the queue.` });
     },
 };

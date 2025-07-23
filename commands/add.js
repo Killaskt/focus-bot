@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -20,6 +19,11 @@ module.exports = {
         }
 
         session.queue.push(userToAdd);
+        if (session.standupMessage) {
+            const nextCommand = interaction.client.commands.get('next');
+            // Only update the embed, don't advance turn
+            nextCommand.sendStandupEmbed(interaction, session);
+        }
         await interaction.reply({ content: `${userToAdd.username} has been added to the queue.` });
     },
 };
