@@ -85,16 +85,19 @@ client.once(Events.ClientReady, async () => {
 
 client.on(Events.InteractionCreate, async interaction => {
   if (interaction.isButton()) {
+    console.log(`[Button] customId: ${interaction.customId}, isActive: ${session.isActive}`);
     if (!session.isActive) {
-      return interaction.reply({ content: 'No stand-up in progress.', ephemeral: true });
+      return interaction.reply({ content: 'No stand-up in progress.', flags: 64 });
     }
     if (interaction.customId === 'next_speaker') {
+      console.log('[Button] Next speaker pressed.');
       const nextCommand = client.commands.get('next');
       await nextCommand.execute(interaction, session);
-      await interaction.deferUpdate();
+      // Do NOT call deferUpdate or update here!
       return;
     }
     if (interaction.customId === 'end_standup') {
+      console.log('[Button] End standup pressed.');
       session.isActive = false;
       session.currentSpeaker = null;
       session.queue = [];
