@@ -63,7 +63,7 @@ for (const file of commandFiles) {
 
 // This event listener will run once when the client is ready and successfully logged in.
 client.once(Events.ClientReady, async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag} v2`);
 
   const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN);
   const commands = client.commands.map(cmd => cmd.data.toJSON());
