@@ -27,15 +27,27 @@ function sendStandupEmbed(channel, session) {
 }
 
 function startTurn(interaction, session) {
+    if (session.transitioning) return;
+    session.transitioning = true;
     if (session.timer) {
         clearTimeout(session.timer);
     }
-
+    // Only advance if there is a next speaker
+    if (session.queue.length === 0) {
+        endStandup(interaction, session);
+        session.transitioning = false;
+        return;
+    }
+    if (session.currentSpeaker) {
+        session.spoken.push(session.currentSpeaker);
+    }
     session.currentSpeaker = session.queue.shift();
-    session.spoken.push(session.currentSpeaker);
-
+    if (!session.currentSpeaker) {
+        endStandup(interaction, session);
+        session.transitioning = false;
+        return;
+    }
     sendStandupEmbed(interaction.channel, session);
-
     session.timer = setTimeout(() => {
         interaction.channel.send(`${session.currentSpeaker.username}'s time is up!`);
         if (session.feedbackTime > 0) {
@@ -48,6 +60,7 @@ function startTurn(interaction, session) {
             }
         }
     }, session.speakingTime);
+    session.transitioning = false;
 }
 
 function startFeedback(interaction, session) {
@@ -63,6 +76,11 @@ function startFeedback(interaction, session) {
 }
 
 function endStandup(interaction, session) {
+    session.transitioning = false;
+    if (session.standupMessage) {
+        session.standupMessage.edit({ content: 'Stand-up ended.', embeds: [], components: [] });
+        session.standupMessage = null;
+    }
     interaction.channel.send('The stand-up has ended.');
     session.isActive = false;
     session.currentSpeaker = null;
