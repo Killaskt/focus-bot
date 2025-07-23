@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 
-function sendStandupEmbed(channel, session) {
+function sendStandupEmbed(interaction, session) {
     const allUsers = [session.currentSpeaker, ...session.queue].filter(Boolean);
     const embed = new EmbedBuilder()
         .setTitle('Current Standup')
@@ -23,7 +23,11 @@ function sendStandupEmbed(channel, session) {
             .setLabel('End Standup')
             .setStyle(ButtonStyle.Danger)
     );
-    channel.send({ embeds: [embed], components: [row] });
+    if (session.standupMessage) {
+        session.standupMessage.edit({ embeds: [embed], components: [row] });
+    } else {
+        interaction.channel.send({ embeds: [embed], components: [row] });
+    }
 }
 
 function startTurn(interaction, session) {
@@ -47,7 +51,7 @@ function startTurn(interaction, session) {
         session.transitioning = false;
         return;
     }
-    sendStandupEmbed(interaction.channel, session);
+    sendStandupEmbed(interaction, session);
     session.timer = setTimeout(() => {
         interaction.channel.send(`${session.currentSpeaker.username}'s time is up!`);
         if (session.feedbackTime > 0) {
