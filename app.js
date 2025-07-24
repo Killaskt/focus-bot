@@ -84,47 +84,63 @@ client.once(Events.ClientReady, async () => {
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-  if (interaction.isButton()) {
-    console.log(`[Button] customId: ${interaction.customId}, isActive: ${session.isActive}`);
-    if (!session.isActive) {
-      return interaction.reply({ content: 'No stand-up in progress.', flags: 64 });
-    }
-    if (interaction.customId === 'next_speaker') {
-      console.log('[Button] Next speaker pressed.');
-      const nextCommand = client.commands.get('next');
-      await nextCommand.execute(interaction, session);
-      // Do NOT call deferUpdate or update here!
-      return;
-    }
-    if (interaction.customId === 'end_standup') {
-      console.log('[Button] End standup pressed.');
-      session.isActive = false;
-      session.currentSpeaker = null;
-      session.queue = [];
-      session.spoken = [];
-      session.timer = null;
-      await interaction.update({ content: 'Stand-up ended.', embeds: [], components: [] });
-      return;
-    }
-  }
-
-  // This event listener will run every time an interaction is created (e.g., a slash command is used).
-  if (!interaction.isChatInputCommand()) return;
-
-  // Get the command object from the client.commands Collection based on the interaction's command name.
-  const command = client.commands.get(interaction.commandName);
-
-  // If no command with that name exists, do nothing.
-  if (!command) return;
-
   try {
-    // Try to execute the command's 'execute' method, passing in the interaction object.
-    await command.execute(interaction, session);
-  } catch (error) {
-    // If an error occurs during command execution, log it to the console.
-    console.error(error);
-    // Reply to the user that an error occurred. 'ephemeral: true' makes the message only visible to them.
-    await interaction.reply({ content: '❌ There was an error executing that command.', ephemeral: true });
+    if (interaction.isButton()) {
+      console.log(`[Button] customId: ${interaction.customId}, isActive: ${session.isActive}`);
+      if (!session.isActive) {
+        console.warn('[Button] Failure: No stand-up in progress.');
+        return interaction.reply({ content: 'No stand-up in progress.', flags: 64 });
+      }
+      if (interaction.customId === 'next_speaker') {
+        console.log('[Button] Next speaker pressed.');
+        const nextCommand = client.commands.get('next');
+        await nextCommand.execute(interaction, session);
+        return;
+      }
+      if (interaction.customId === 'end_standup') {
+        console.log('[Button] End standup pressed.');
+        session.isActive = false;
+        session.currentSpeaker = null;
+        session.queue = [];
+        session.spoken = [];
+        session.timer = null;
+        await interaction.update({ content: 'Stand-up ended.', embeds: [], components: [] });
+        return;
+      }
+      // Unknown button
+      console.warn(`[Button] Failure: Unknown button customId: ${interaction.customId}`);
+      return interaction.reply({ content: 'Unknown button.', flags: 64 });
+    }
+
+    // This event listener will run every time an interaction is created (e.g., a slash command is used).
+    if (!interaction.isChatInputCommand()) return;
+
+    // Get the command object from the client.commands Collection based on the interaction's command name.
+    const command = client.commands.get(interaction.commandName);
+
+    // If no command with that name exists, do nothing.
+    if (!command) {
+      console.warn(`[Slash] Failure: Command not found: ${interaction.commandName}`);
+      return;
+    }
+
+    try {
+      // Try to execute the command's 'execute' method, passing in the interaction object.
+      await command.execute(interaction, session);
+    } catch (error) {
+      // If an error occurs during command execution, log it to the console.
+      console.error(`[Slash] Failure: Error executing command ${interaction.commandName}:`, error);
+      await interaction.reply({ content: '❌ There was an error executing that command.', flags: 64 });
+    }
+  } catch (outerError) {
+    console.error('[Global] Unhandled error in InteractionCreate:', outerError);
+    try {
+      if (interaction && !interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '❌ Bot error. Please try again.', flags: 64 });
+      }
+    } catch (replyError) {
+      console.error('[Global] Failed to reply to interaction after error:', replyError);
+    }
   }
 });
 
