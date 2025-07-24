@@ -41,12 +41,12 @@ module.exports = {
         session.voiceChannel = voiceChannel;
 
         // Use tethered channel if set
-        session.textChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
-        if (!session.textChannel) {
+        const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!targetChannel) {
             console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
-            session.textChannel = interaction.channel;
         }
-        console.log(`[Standup] session.textChannel set to #${session.textChannel.name} (${session.textChannel.id})`);
+        await (targetChannel || interaction.channel).send('Stand-up started!');
+        console.log(`[Standup] Standup started message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
 
         // Build the rich embed message
         const embed = new EmbedBuilder()

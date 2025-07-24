@@ -25,5 +25,13 @@ module.exports = {
             nextCommand.sendStandupEmbed(interaction, session);
         }
         await interaction.reply({ content: `${userToAdd.username} has been added to the queue.` });
+
+        // Use tethered channel if set
+        const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!targetChannel) {
+            console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+        }
+        await (targetChannel || interaction.channel).send(`${userToAdd.username} has been added to the queue.`);
+        console.log(`[Standup] User added message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
     },
 };

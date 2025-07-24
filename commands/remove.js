@@ -25,6 +25,13 @@ module.exports = {
             const nextCommand = interaction.client.commands.get('next');
             nextCommand.sendStandupEmbed(interaction, session);
         }
+        // Use tethered channel if set
+        const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!targetChannel) {
+            console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+        }
+        await (targetChannel || interaction.channel).send(`${userToRemove.username} has been removed from the queue.`);
+        console.log(`[Standup] User removed message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
         await interaction.reply({ content: `${userToRemove.username} has been removed from the queue.` });
     },
 };

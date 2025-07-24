@@ -27,6 +27,14 @@ module.exports = {
             session.standupMessage = null;
         }
 
+        // Use tethered channel if set
+        const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!targetChannel) {
+            console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+        }
+        await (targetChannel || interaction.channel).send('Stand-up ended.');
+        console.log(`[Standup] Standup ended message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
+
         await interaction.reply({ content: 'Stand-up ended.', ephemeral: true });
     },
 };
