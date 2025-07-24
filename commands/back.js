@@ -43,6 +43,20 @@ module.exports = {
                 }
             }
         }, session.speakingTime);
+        // Track back button usage
+        session.backActions = (session.backActions || 0) + 1;
+        // Track time for previous speaker
+        if (session.currentSpeaker && session.turnStartTime) {
+            const userId = session.currentSpeaker.id;
+            const now = Date.now();
+            const duration = now - session.turnStartTime;
+            if (!session.stats[userId]) session.stats[userId] = { totalTime: 0, turns: 0, longest: 0, shortest: Infinity };
+            session.stats[userId].totalTime += duration;
+            session.stats[userId].turns += 1;
+            session.stats[userId].longest = Math.max(session.stats[userId].longest, duration);
+            session.stats[userId].shortest = Math.min(session.stats[userId].shortest, duration);
+        }
+        session.turnStartTime = Date.now();
         if (!isButton) {
             await interaction.reply({ content: 'Moved to previous speaker.', flags: 64 });
         } else {

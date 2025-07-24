@@ -37,6 +37,10 @@ const session = {
     timer: null,
     // Set a default tethered channel ID dynamically to the first available text channel if not set
     tetheredChannelId: null,
+    stats: {}, // { userId: { totalTime: ms, turns: n, longest: ms, shortest: ms } }
+    backActions: 0, // total number of times 'back' was used
+    countdownInterval: null, // for live countdown
+    turnStartTime: null, // timestamp when current turn started
 };
 
 // --- DYNAMIC COMMAND LOADER ---
