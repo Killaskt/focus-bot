@@ -42,8 +42,12 @@ async function sendStandupEmbed(interaction, session) {
         } else {
             // Use tethered channel if set
             const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
-            const msg = await targetChannel.send({ embeds: [embed], components: [row] });
+            if (!targetChannel) {
+                console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+            }
+            const msg = await (targetChannel || interaction.channel).send({ embeds: [embed], components: [row] });
             session.standupMessage = msg;
+            console.log(`[Standup] Standup embed sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
         }
     } catch (e) {
         console.error('Failed to update standup embed:', e);
@@ -86,7 +90,11 @@ function startTurn(interaction, session) {
                 console.log(`Timer up for ${session.currentSpeaker.username}`);
                 // Use tethered channel if set
                 const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+                if (!targetChannel) {
+                    console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+                }
                 targetChannel.send(`${session.currentSpeaker.username}'s time is up!`);
+                console.log(`[Standup] 'Time is up' message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
                 if (session.feedbackTime > 0) {
                     startFeedback(interaction, session);
                 } else {
@@ -108,12 +116,19 @@ function startFeedback(interaction, session) {
     console.log(`Feedback for ${session.currentSpeaker && session.currentSpeaker.username}`);
     // Use tethered channel if set
     const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+    if (!targetChannel) {
+        console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+    }
     targetChannel.send(`Feedback time for ${session.currentSpeaker.username} has started.`);
     session.timer = setTimeout(() => {
         console.log(`Feedback time over for ${session.currentSpeaker && session.currentSpeaker.username}`);
         // Use tethered channel if set
         const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!targetChannel) {
+            console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+        }
         targetChannel.send(`Feedback time is over.`);
+        console.log(`[Standup] Feedback end message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
         if (session.queue.length > 0) {
             startTurn(interaction, session);
         } else {
@@ -131,7 +146,11 @@ async function endStandup(interaction, session) {
     }
     // Use tethered channel if set
     const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
-    await targetChannel.send('The stand-up has ended.');
+    if (!targetChannel) {
+        console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+    }
+    await (targetChannel || interaction.channel).send('The stand-up has ended.');
+    console.log(`[Standup] Standup ended message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
     session.isActive = false;
     session.currentSpeaker = null;
     session.queue = [];

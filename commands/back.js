@@ -28,7 +28,11 @@ module.exports = {
         session.timer = setTimeout(async () => {
             // Use tethered channel if set
             const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
-            await targetChannel.send(`${session.currentSpeaker.username}'s time is up!`);
+            if (!targetChannel) {
+                console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+            }
+            await (targetChannel || interaction.channel).send(`${session.currentSpeaker.username}'s time is up!`);
+            console.log(`[Standup] 'Time is up' message sent to #${(targetChannel || interaction.channel).name} (${(targetChannel || interaction.channel).id})`);
             if (session.feedbackTime > 0) {
                 nextCommand.startFeedback(interaction, session);
             } else {

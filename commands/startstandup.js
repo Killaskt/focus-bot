@@ -42,6 +42,11 @@ module.exports = {
 
         // Use tethered channel if set
         session.textChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        if (!session.textChannel) {
+            console.error(`[Tether] Could not find tethered channel with ID ${session.tetheredChannelId}. Defaulting to current channel.`);
+            session.textChannel = interaction.channel;
+        }
+        console.log(`[Standup] session.textChannel set to #${session.textChannel.name} (${session.textChannel.id})`);
 
         // Build the rich embed message
         const embed = new EmbedBuilder()
