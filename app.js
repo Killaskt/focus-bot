@@ -97,6 +97,12 @@ client.on(Events.InteractionCreate, async interaction => {
         await nextCommand.execute(interaction, session);
         return;
       }
+      if (interaction.customId === 'back_speaker') {
+        console.log('[Button] Back speaker pressed.');
+        const backCommand = client.commands.get('back');
+        await backCommand.execute(interaction, session);
+        return;
+      }
       if (interaction.customId === 'end_standup') {
         console.log('[Button] End standup pressed.');
         session.isActive = false;
