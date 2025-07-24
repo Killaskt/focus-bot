@@ -65,8 +65,16 @@ module.exports = {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
-        session.standupMessage = reply;
+        // Send the embed to the tethered channel and store the message
+        const standupMsg = await (targetChannel || interaction.channel).send({ embeds: [embed], components: [row] });
+        session.standupMessage = standupMsg;
+
+        // Optionally reply to the command to acknowledge
+        if (interaction.replied || interaction.deferred) {
+            // Already replied
+        } else {
+            await interaction.reply({ content: 'Standup started!', ephemeral: true });
+        }
 
         // Start the first person's turn
         const nextCommand = interaction.client.commands.get('next');
