@@ -54,6 +54,43 @@ async function sendStandupEmbed(interaction, session) {
     }
 }
 
+async function updateCountdownEmbed(interaction, session) {
+    if (!session.standupMessage || !session.currentSpeaker) return;
+    const allUsers = [session.currentSpeaker, ...session.queue].filter(Boolean);
+    const now = Date.now();
+    const elapsed = session.turnStartTime ? Math.floor((now - session.turnStartTime) / 1000) : 0;
+    const remaining = Math.max(0, Math.floor(session.speakingTime / 1000) - elapsed);
+    const embed = new EmbedBuilder()
+        .setTitle('Current Standup')
+        .setDescription(
+            allUsers.map((u, i) => {
+                if (!u) return '';
+                if (i === 0) return `➡️ **${u.username}**  ⏳ ${remaining}s left`;
+                return u.username;
+            }).join('\n')
+        )
+        .setColor(0x00AE86);
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('next_speaker')
+            .setLabel('Next')
+            .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+            .setCustomId('back_speaker')
+            .setLabel('Back')
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId('end_standup')
+            .setLabel('End Standup')
+            .setStyle(ButtonStyle.Danger)
+    );
+    try {
+        await session.standupMessage.edit({ embeds: [embed], components: [row] });
+    } catch (e) {
+        console.error('Failed to update countdown embed:', e);
+    }
+}
+
 function startTurn(interaction, session) {
     return new Promise((resolve) => {
         logSession(session, 'startTurn (before)');
@@ -99,6 +136,7 @@ function startTurn(interaction, session) {
         }
         sendStandupEmbed(interaction, session).then(() => {
             session.timer = setTimeout(() => {
+                if (!session.currentSpeaker) return; // Prevent error if standup ended
                 console.log(`Timer up for ${session.currentSpeaker.username}`);
                 // Use tethered channel if set
                 const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
@@ -117,6 +155,9 @@ function startTurn(interaction, session) {
                     }
                 }
             }, session.speakingTime);
+            session.countdownInterval = setInterval(() => {
+                updateCountdownEmbed(interaction, session);
+            }, 1000);
             session.transitioning = false;
             logSession(session, 'startTurn (after)');
             resolve();
@@ -168,6 +209,10 @@ async function endStandup(interaction, session) {
     session.queue = [];
     session.spoken = [];
     session.timer = null;
+    if (session.countdownInterval) {
+        clearInterval(session.countdownInterval);
+        session.countdownInterval = null;
+    }
     logSession(session, 'endStandup');
 }
 
