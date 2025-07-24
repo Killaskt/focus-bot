@@ -40,7 +40,9 @@ async function sendStandupEmbed(interaction, session) {
         if (session.standupMessage) {
             await session.standupMessage.edit({ embeds: [embed], components: [row] });
         } else {
-            const msg = await interaction.channel.send({ embeds: [embed], components: [row] });
+            // Use tethered channel if set
+            const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+            const msg = await targetChannel.send({ embeds: [embed], components: [row] });
             session.standupMessage = msg;
         }
     } catch (e) {
@@ -82,7 +84,9 @@ function startTurn(interaction, session) {
         sendStandupEmbed(interaction, session).then(() => {
             session.timer = setTimeout(() => {
                 console.log(`Timer up for ${session.currentSpeaker.username}`);
-                interaction.channel.send(`${session.currentSpeaker.username}'s time is up!`);
+                // Use tethered channel if set
+                const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+                targetChannel.send(`${session.currentSpeaker.username}'s time is up!`);
                 if (session.feedbackTime > 0) {
                     startFeedback(interaction, session);
                 } else {
@@ -102,10 +106,14 @@ function startTurn(interaction, session) {
 
 function startFeedback(interaction, session) {
     console.log(`Feedback for ${session.currentSpeaker && session.currentSpeaker.username}`);
-    interaction.channel.send(`Feedback time for ${session.currentSpeaker.username} has started.`);
+    // Use tethered channel if set
+    const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+    targetChannel.send(`Feedback time for ${session.currentSpeaker.username} has started.`);
     session.timer = setTimeout(() => {
         console.log(`Feedback time over for ${session.currentSpeaker && session.currentSpeaker.username}`);
-        interaction.channel.send(`Feedback time is over.`);
+        // Use tethered channel if set
+        const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+        targetChannel.send(`Feedback time is over.`);
         if (session.queue.length > 0) {
             startTurn(interaction, session);
         } else {
@@ -114,14 +122,16 @@ function startFeedback(interaction, session) {
     }, session.feedbackTime);
 }
 
-function endStandup(interaction, session) {
+async function endStandup(interaction, session) {
     console.log('Ending standup.');
     session.transitioning = false;
     if (session.standupMessage) {
         session.standupMessage.edit({ content: 'Stand-up ended.', embeds: [], components: [] });
         session.standupMessage = null;
     }
-    interaction.channel.send('The stand-up has ended.');
+    // Use tethered channel if set
+    const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+    await targetChannel.send('The stand-up has ended.');
     session.isActive = false;
     session.currentSpeaker = null;
     session.queue = [];

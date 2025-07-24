@@ -39,7 +39,9 @@ module.exports = {
         session.speakingTime = speakingTime * 60 * 1000;
         session.feedbackTime = feedbackTime * 60 * 1000;
         session.voiceChannel = voiceChannel;
-        session.textChannel = interaction.channel;
+
+        // Use tethered channel if set
+        session.textChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
 
         // Build the rich embed message
         const embed = new EmbedBuilder()

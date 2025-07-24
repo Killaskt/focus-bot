@@ -35,6 +35,8 @@ const session = {
     voiceChannel: null,
     textChannel: null,
     timer: null,
+    // Set a default tethered channel ID dynamically to the first available text channel if not set
+    tetheredChannelId: null,
 };
 
 // --- DYNAMIC COMMAND LOADER ---
@@ -64,6 +66,34 @@ for (const file of commandFiles) {
 // This event listener will run once when the client is ready and successfully logged in.
 client.once(Events.ClientReady, async () => {
   console.log(`✅ Logged in as ${client.user.tag} v3`);
+  console.log('🤖 To set a standup tether channel, run /settetherchannel in your desired channel.');
+
+  // Initialize tetheredChannelId to the first available text channel in the first guild
+  const firstGuild = client.guilds.cache.first();
+  if (firstGuild) {
+    const textChannel = firstGuild.channels.cache.find(channel => channel.type === 'GUILD_TEXT');
+    if (textChannel) {
+      session.tetheredChannelId = textChannel.id;
+      console.log(`🔗 Default tethered channel set to: ${textChannel.name} (${textChannel.id})`);
+    } else {
+      console.warn('⚠️ No text channel found in the first guild to set as default tethered channel.');
+    }
+  } else {
+    console.warn('⚠️ Bot is not in any guilds. Cannot set default tethered channel.');
+  }
+
+  // Dynamically set default tethered channel if not set
+  if (!session.tetheredChannelId) {
+    const firstTextChannel = client.channels.cache.find(
+      ch => ch.type === 0 && ch.guild && ch.viewable && ch.permissionsFor(client.user).has('SendMessages')
+    );
+    if (firstTextChannel) {
+      session.tetheredChannelId = firstTextChannel.id;
+      console.log(`🔗 Default tethered channel set to #${firstTextChannel.name} (${firstTextChannel.id})`);
+    } else {
+      console.warn('⚠️ No suitable default text channel found to tether. Please run /settetherchannel.');
+    }
+  }
 
   const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN);
   const commands = client.commands.map(cmd => cmd.data.toJSON());

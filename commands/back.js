@@ -25,8 +25,10 @@ module.exports = {
         // Update the embed and reset timer
         const nextCommand = interaction.client.commands.get('next');
         nextCommand.sendStandupEmbed(interaction, session);
-        session.timer = setTimeout(() => {
-            interaction.channel.send(`${session.currentSpeaker.username}'s time is up!`);
+        session.timer = setTimeout(async () => {
+            // Use tethered channel if set
+            const targetChannel = session.tetheredChannelId ? interaction.client.channels.cache.get(session.tetheredChannelId) : interaction.channel;
+            await targetChannel.send(`${session.currentSpeaker.username}'s time is up!`);
             if (session.feedbackTime > 0) {
                 nextCommand.startFeedback(interaction, session);
             } else {
