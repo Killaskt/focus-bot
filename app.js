@@ -95,6 +95,14 @@ client.once(Events.ClientReady, async () => {
     }
   }
 
+  // Send init message to the default channel if set
+  if (session.tetheredChannelId) {
+    const channel = client.channels.cache.get(session.tetheredChannelId);
+    if (channel) {
+      channel.send('🤖 To set a standup tether channel, run /settetherchannel in your desired channel.');
+    }
+  }
+
   const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN);
   const commands = client.commands.map(cmd => cmd.data.toJSON());
 
